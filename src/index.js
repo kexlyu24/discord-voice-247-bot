@@ -50,10 +50,8 @@ client.once(Events.ClientReady, async (c) => {
   console.log(`🛡️ Sistem 24/7 Voice Anti-Disconnect aktif`);
   console.log(`=================================================\n`);
 
-  // Terapkan ulang berkala agar sesi Discord lain tidak meninggalkan aktivitas lama.
-  const setBotPresence = () => applyPresence(c.user, voiceManager.settings.presence);
-  setBotPresence();
-  setInterval(setBotPresence, 5 * 60 * 1000);
+  // Terapkan presence sekali saat startup; pemanggilan ulang akan mereset timer aktivitas Discord.
+  applyPresence(c.user, voiceManager.settings.presence);
 
   // Auto-join saat startup jika ada konfigurasi tersimpan atau di .env
   const settings = voiceManager.settings;
