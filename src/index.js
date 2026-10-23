@@ -5,10 +5,10 @@ const {
   Client,
   GatewayIntentBits,
   Collection,
-  ActivityType,
   Events,
 } = require('discord.js');
 const { VoiceManager } = require('./managers/voiceManager');
+const { applyPresence } = require('./utils/presence');
 
 const token = process.env.DISCORD_TOKEN;
 
@@ -51,10 +51,7 @@ client.once(Events.ClientReady, async (c) => {
   console.log(`=================================================\n`);
 
   // Terapkan ulang berkala agar sesi Discord lain tidak meninggalkan aktivitas lama.
-  const setBotPresence = () => {
-    c.user.setActivity('NOIRÉL', { type: ActivityType.Watching });
-    c.user.setStatus('online');
-  };
+  const setBotPresence = () => applyPresence(c.user, voiceManager.settings.presence);
   setBotPresence();
   setInterval(setBotPresence, 5 * 60 * 1000);
 

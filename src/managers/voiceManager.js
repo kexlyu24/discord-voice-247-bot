@@ -71,6 +71,7 @@ class VoiceManager {
           guildId: data.guildId || process.env.GUILD_ID || null,
           channelId: data.channelId || process.env.TARGET_CHANNEL_ID || null,
           stay247: typeof data.stay247 === 'boolean' ? data.stay247 : true,
+          presence: data.presence || { text: 'NOIRÉL', type: 'watching' },
         };
       }
     } catch (err) {
@@ -81,6 +82,7 @@ class VoiceManager {
       guildId: process.env.GUILD_ID || null,
       channelId: process.env.TARGET_CHANNEL_ID || null,
       stay247: true,
+      presence: { text: 'NOIRÉL', type: 'watching' },
     };
   }
 
