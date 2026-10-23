@@ -1,0 +1,26 @@
+{
+  "name": "discord-voice-247-bot",
+  "version": "1.0.0",
+  "description": "Discord Bot untuk standby di Voice Channel 24/7 nonstop anti-disconnect",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "deploy": "node src/deploy-commands.js"
+  },
+  "keywords": [
+    "discord",
+    "voice",
+    "24-7",
+    "discord-js",
+    "stay-vc"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@discordjs/voice": "^0.18.0",
+    "discord.js": "^14.17.1",
+    "dotenv": "^16.4.7",
+    "libsodium-wrappers": "^0.7.15",
+    "opusscript": "^0.1.1"
+  }
+}
