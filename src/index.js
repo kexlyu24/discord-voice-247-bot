@@ -50,11 +50,13 @@ client.once(Events.ClientReady, async (c) => {
   console.log(`🛡️ Sistem 24/7 Voice Anti-Disconnect aktif`);
   console.log(`=================================================\n`);
 
-  // Set aktivitas Discord: "Watching NOIRÉL"
-  c.user.setPresence({
-    activities: [{ name: 'NOIRÉL', type: ActivityType.Watching }],
-    status: 'online',
-  });
+  // Terapkan ulang berkala agar sesi Discord lain tidak meninggalkan aktivitas lama.
+  const setBotPresence = () => {
+    c.user.setActivity('NOIRÉL', { type: ActivityType.Watching });
+    c.user.setStatus('online');
+  };
+  setBotPresence();
+  setInterval(setBotPresence, 5 * 60 * 1000);
 
   // Auto-join saat startup jika ada konfigurasi tersimpan atau di .env
   const settings = voiceManager.settings;
