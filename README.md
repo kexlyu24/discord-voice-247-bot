@@ -1,151 +1,220 @@
-# 🔊 Discord Voice 24/7 Nonstop Bot (Anti-Disconnect)
+<div align="center">
 
-Bot Discord khusus untuk **standby di Voice Channel selama 24 jam nonstop** tanpa pernah disconnect, bahkan ketika voice channel dalam keadaan kosong atau tidak ada orang sama sekali.
+# Discord Voice 24/7
 
-Dibangun menggunakan **Node.js**, **Discord.js v14**, dan **@discordjs/voice** dengan dependensi pure WebAssembly/JavaScript (`libsodium-wrappers` & `opusscript`), sehingga **tidak memerlukan compiler C++ (Visual Studio / node-gyp) maupun instalasi FFmpeg**.
+**Bot Discord ringan untuk menjaga satu voice channel tetap aktif sepanjang waktu.**
 
----
+[![Node.js](https://img.shields.io/badge/Node.js-22.12%2B-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+[![discord.js](https://img.shields.io/badge/discord.js-v14-5865F2?logo=discord&logoColor=white)](https://discord.js.org/)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![GitHub last commit](https://img.shields.io/github/last-commit/kexlyu24/discord-voice-247-bot)](https://github.com/kexlyu24/discord-voice-247-bot/commits/main)
 
-## ✨ Fitur Utama
+Silent keepalive · Auto-reconnect · Persistent configuration · VPS monitoring · Configurable Rich Presence
 
-- 🛡️ **24/7 Nonstop Anti-Disconnect**: Bot tetap berada di voice channel selamanya meskipun tidak ada orang yang berbicara atau channel kosong.
-- 🔁 **Triple Layer Auto-Reconnect**:
-  1. **Discord RTC Recovery**: Mendeteksi migrasi server Discord atau perpindahan rute RTC via WebSocket signalling.
-  2. **Event Guard (`voiceStateUpdate`)**: Jika bot di-kick atau dipindahkan paksa ke AFK channel, bot otomatis menyambung kembali ke channel target dalam hitungan detik.
-  3. **Watchdog Timer (30 Detik)**: Memeriksa integritas koneksi setiap 30 detik. Jika koneksi terputus secara diam-diam (silent drop), watchdog akan langsung memulihkannya.
-- 📡 **NAT UDP Keepalive (Anti-Stall)**:
-  - Mengirim stream Opus silence frame (`0xF8, 0xFF, 0xFE`) berkecepatan rendah (~1.2 kbps) secara konstan.
-  - Menjaga state UDP pada router rumah, ISP, atau firewall agar port UDP tidak di-timeout / di-freeze, tanpa membebani CPU (penggunaan CPU < 0.1%).
-- 💾 **State Persistence (`data/settings.json`)**:
-  - Menyimpan ID channel dan status 24/7 secara otomatis.
-  - Saat bot atau komputer/VPS direstart, bot akan **langsung join kembali** ke voice channel target tanpa perlu mengetik perintah ulang.
-- ⚡ **Modern Slash Commands**:
-  - `/join [channel]` — Menghubungkan bot ke voice channel dan mengaktifkan mode 24/7.
-  - `/leave` — Memutuskan bot dari voice channel dan menonaktifkan mode 24/7.
-  - `/stay <aktif: true|false>` — Mengaktifkan/menonaktifkan auto-reconnect 24/7.
-  - `/status` — Melihat status real-time, ping, uptime, dan kondisi koneksi RTC.
-- 🔄 **Windows Auto-Restart Script (`start.bat`)**: Loop otomatis yang merestart bot jika terjadi crash atau internet putus.
+</div>
 
----
+## Tentang proyek
 
-## 📋 Prasyarat
+Discord Voice 24/7 mempertahankan bot di voice channel yang dipilih, termasuk saat channel kosong. Bot mengirim Opus silence frames untuk menjaga jalur audio aktif, memantau koneksi setiap 30 detik, dan mencoba bergabung kembali ketika terputus, dipindahkan, atau dikeluarkan.
 
-- **Node.js** versi 18 ke atas (Direkomendasikan Node.js v20 atau v24).
-- Akun Discord dan Server Discord tempat Anda memiliki izin Administrator / Kelola Server.
+Konfigurasi channel, mode 24/7, dan Rich Presence disimpan di `data/settings.json`. Setelah proses atau VPS restart, bot memulihkan konfigurasi tersebut secara otomatis.
 
----
+## Fitur
 
-## 🚀 Langkah Instalasi & Pengaturan
+- **Voice 24/7** — tetap berada di channel target saat tidak ada anggota lain.
+- **Silent keepalive** — Opus silence stream tanpa FFmpeg.
+- **Auto-reconnect** — menangani perubahan voice state dan gangguan RTC.
+- **Watchdog 30 detik** — mendeteksi koneksi yang tidak lagi sinkron.
+- **Persistent state** — channel target dan presence bertahan setelah restart.
+- **VPS monitoring** — `/status` menampilkan penggunaan CPU dan RAM host.
+- **Rich Presence** — administrator dapat mengubah aktivitas bot dari Discord.
+- **PM2 ready** — konfigurasi production dan auto-start setelah reboot tersedia.
 
-### 1. Buat Bot di Discord Developer Portal
-1. Buka [Discord Developer Portal](https://discord.com/developers/applications).
-2. Klik tombol **New Application**, beri nama (misalnya: `Voice 24/7 Bot`), lalu klik **Create**.
-3. Masuk ke menu **Bot** di bilah sisi kiri:
-   - Klik **Reset Token** untuk mendapatkan token bot. Simpan token ini (jangan bagikan kepada siapa pun).
-   - Scroll ke bawah ke bagian **Privileged Gateway Intents**. *(Catatan: Bot ini **TIDAK** memerlukan privileged intents karena hanya memakai slash command dan voice state, jadi Anda bisa membiarkannya default).*
-4. Masuk ke menu **OAuth2** -> **General**:
-   - Salin **Application ID** / **Client ID**.
+## Slash commands
 
-### 2. Undang Bot ke Server Discord Anda
-1. Masuk ke menu **OAuth2** -> **URL Generator** di Developer Portal.
-2. Pada bagian **Scopes**, centang:
-   - `bot`
-   - `applications.commands`
-3. Pada bagian **Bot Permissions**, centang:
-   - `View Channels`
-   - `Connect`
-   - `Speak`
-   - `Send Messages`
-   - `Embed Links`
-4. Salin URL yang dihasilkan di bagian bawah, buka di browser Anda, lalu pilih server Discord Anda untuk mengundang bot.
+| Command | Akses | Fungsi |
+|---|---|---|
+| `/join [channel]` | Semua anggota | Bergabung ke channel yang dipilih atau channel pengguna, lalu mengaktifkan mode 24/7. |
+| `/leave` | Semua anggota | Keluar dari voice channel dan menonaktifkan mode 24/7. |
+| `/stay <aktif>` | Semua anggota | Mengaktifkan atau menonaktifkan auto-reconnect. |
+| `/status` | Semua anggota | Menampilkan voice target, RTC, ping, uptime, CPU VPS, dan RAM VPS. |
+| `/presence <tipe> <teks>` | Administrator | Mengatur aktivitas `Watching`, `Playing`, `Listening`, atau `Competing`. |
 
----
+Contoh:
 
-### 3. Konfigurasi Environment (`.env`)
-1. Di folder proyek ini, buat salinan dari file `.env.example` dan ubah namanya menjadi `.env`:
-   - Di Windows PowerShell / CMD:
-     ```bash
-     copy .env.example .env
-     ```
-2. Buka file `.env` dengan text editor (Notepad, VS Code, dll), lalu isi data bot Anda:
-   ```env
-   # Token Bot Discord dari Developer Portal
-   DISCORD_TOKEN=MASUKKAN_TOKEN_BOT_ANDA_DISINI
-
-   # Client ID / Application ID Bot
-   CLIENT_ID=MASUKKAN_CLIENT_ID_ANDA_DISINI
-
-   # Opsional: Masukkan Server ID (Guild ID) jika ingin slash command langsung muncul tanpa delay
-   GUILD_ID=
-
-   # Opsional: Masukkan Voice Channel ID jika ingin bot otomatis join saat pertama kali dinyalakan
-   TARGET_CHANNEL_ID=
-
-   # Opsi Tambahan (Default sudah optimal)
-   SELF_DEAF=true
-   SELF_MUTE=true
-   ```
-
-> **Tips Mendapatkan ID di Discord**: Aktifkan **Developer Mode** di Discord (*Settings -> Advanced -> Developer Mode*). Klik kanan pada Server untuk salin Guild ID, atau klik kanan pada Voice Channel untuk salin Channel ID.
-
----
-
-### 4. Instalasi Dependensi
-Jalankan perintah berikut di terminal / Command Prompt pada folder ini:
-```bash
-npm install
+```text
+/presence tipe:Watching teks:NOIRÉL
 ```
 
----
+## Persyaratan
 
-### 5. Daftarkan Slash Commands ke Discord
-Jalankan perintah ini satu kali untuk mendaftarkan perintah `/join`, `/leave`, `/stay`, dan `/status`:
+- Node.js **22.12.0 atau lebih baru**
+- Bot Discord dengan permission `View Channels`, `Connect`, `Speak`, `Send Messages`, dan `Embed Links`
+- Host yang tetap menyala dan mengizinkan koneksi HTTPS, WebSocket, dan UDP keluar
+
+Privileged Gateway Intents dan FFmpeg tidak diperlukan.
+
+## Instalasi
+
+### 1. Clone dan pasang dependensi
+
+```bash
+git clone https://github.com/kexlyu24/discord-voice-247-bot.git
+cd discord-voice-247-bot
+npm ci
+```
+
+### 2. Buat konfigurasi
+
+Linux/macOS:
+
+```bash
+cp .env.example .env
+```
+
+Windows:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Isi `.env`:
+
+```env
+DISCORD_TOKEN=token_bot_discord
+CLIENT_ID=application_id_bot
+GUILD_ID=id_server_discord
+TARGET_CHANNEL_ID=id_voice_channel
+SELF_DEAF=true
+SELF_MUTE=true
+```
+
+| Variabel | Wajib | Keterangan |
+|---|---:|---|
+| `DISCORD_TOKEN` | Ya | Token rahasia dari Discord Developer Portal. |
+| `CLIENT_ID` | Ya | Application ID untuk registrasi slash commands. |
+| `GUILD_ID` | Disarankan | Registrasi command langsung ke satu server. |
+| `TARGET_CHANNEL_ID` | Disarankan | Voice channel yang dimasuki saat startup pertama. |
+| `SELF_DEAF` | Tidak | Default `true`; bot tidak menerima audio anggota. |
+| `SELF_MUTE` | Tidak | Default `false`; atur `true` jika bot harus tampil muted. |
+
+> Jangan commit `.env` atau membagikan token bot. Jika token pernah terekspos, reset segera di Discord Developer Portal.
+
+### 3. Daftarkan command dan jalankan
+
 ```bash
 npm run deploy
-```
-*(Jika `GUILD_ID` di file `.env` diisi, perintah akan muncul secara instan di server tersebut. Jika dikosongkan, perintah didaftarkan secara Global dan memerlukan waktu 1-5 menit untuk terpropagasi).*
-
----
-
-### 6. Menjalankan Bot
-
-#### Opsi A: Menggunakan `start.bat` (Sangat Direkomendasikan untuk Windows)
-Cukup klik ganda file **`start.bat`**. 
-Script ini memiliki fitur **auto-restart loop**: jika koneksi internet terputus atau bot terhenti, script akan otomatis merestart bot dalam 5 detik.
-
-#### Opsi B: Menggunakan Terminal Biasa
-```bash
 npm start
 ```
 
-#### Opsi C: Menggunakan PM2 (Untuk VPS / Background Service)
+Jika command belum tampil setelah deployment, refresh Discord. Registrasi dengan `GUILD_ID` biasanya tersedia segera; registrasi global dapat memerlukan waktu propagasi.
+
+## Deployment VPS dengan PM2
+
 ```bash
-npm install -g pm2
+sudo npm install -g pm2
 pm2 start ecosystem.config.cjs
 pm2 save
 pm2 startup
 ```
 
----
+Jalankan perintah lanjutan yang dicetak oleh `pm2 startup`, lalu verifikasi:
 
-## 🎮 Penggunaan Slash Commands
+```bash
+pm2 status
+pm2 logs discord-voice-247
+```
 
-| Perintah | Deskripsi |
-|---|---|
-| `/join [channel]` | Memerintahkan bot untuk masuk ke voice channel yang dipilih (atau channel Anda saat ini) dan mengunci channel tersebut sebagai target 24/7. |
-| `/leave` | Mengeluarkan bot dari voice channel dan menonaktifkan mode auto-reconnect 24/7. |
-| `/stay <aktif>` | Mengaktifkan (`True`) atau menonaktifkan (`False`) fitur 24/7 tanpa keluar channel. |
-| `/status` | Menampilkan dashboard status bot (Channel target, Uptime, Ping, Status RTC, dan status proteksi). |
+Konfigurasi PM2 menjalankan `src/index.js`, merestart proses yang gagal, dan membatasi restart saat penggunaan memori mencapai 300 MB.
 
----
+## Menjalankan di Windows
 
-## ❓ FAQ & Troubleshooting
+Klik `start.bat` atau jalankan:
 
-1. **Apakah bot akan terputus jika tidak ada orang di voice channel?**
-   - **TIDAK.** Bot ini memiliki sistem *Silent Keepalive* yang mengirim Opus silence packet secara kontinu, sehingga Discord Voice Server menganggap bot tetap aktif melakukan transmisi dan tidak akan pernah memutuskan koneksi.
-2. **Apa yang terjadi jika bot di-kick oleh admin atau koneksi internet mati sebentar?**
-   - Bot memiliki pendeteksi event `voiceStateUpdate` dan watchdog 30 detik. Segera setelah internet kembali atau setelah bot terputus, bot akan secara otomatis masuk kembali ke voice channel yang tersimpan di `data/settings.json`.
-3. **Apakah bot memakan banyak bandwidth atau kuota?**
-   - Sangat hemat! Bot disetel `selfDeaf: true` (sehingga Discord tidak mengirim data audio pengguna lain ke bot) dan keepalive hanya memakai ~1.2 kbps bandwidth Opus silence.
-4. **Apakah memerlukan FFmpeg?**
-   - **Tidak.** Bot ini murni untuk standby 24/7 dan menggunakan codec Opus internal pure JavaScript/Wasm (`opusscript`), sehingga tidak memerlukan file binary FFmpeg tambahan.
+```powershell
+.\start.bat
+```
+
+Script memasang dependensi jika `node_modules` belum ada dan menjalankan ulang bot lima detik setelah proses berhenti. Komputer harus tetap menyala dan sleep mode harus dimatikan.
+
+## Cara kerja
+
+```mermaid
+flowchart LR
+    A[Discord Gateway] --> B[VoiceManager]
+    B --> C[Discord Voice RTC]
+    B --> D[Opus silence stream]
+    E[Watchdog 30 detik] --> B
+    F[data/settings.json] --> B
+    B --> F
+    G[Slash commands] --> B
+```
+
+1. `VoiceManager` bergabung menggunakan adapter voice milik guild.
+2. Setelah RTC berstatus `Ready`, audio player mengirim Opus silence frames.
+3. `voiceStateUpdate` mendeteksi bot keluar atau dipindahkan dari channel target.
+4. Watchdog membandingkan voice state aktual dengan status RTC setiap 30 detik.
+5. Konfigurasi tersimpan dipakai untuk pemulihan setelah restart.
+
+## Struktur proyek
+
+```text
+src/
+├── commands/
+│   ├── join.js
+│   ├── leave.js
+│   ├── presence.js
+│   ├── status.js
+│   └── stay.js
+├── managers/
+│   └── voiceManager.js
+├── utils/
+│   └── presence.js
+├── deploy-commands.js
+└── index.js
+```
+
+## Troubleshooting
+
+### Bot terlihat di channel tetapi RTC terus `Connecting`
+
+Pastikan dependency terbaru terpasang dan restart proses:
+
+```bash
+git pull --ff-only
+npm ci
+pm2 restart discord-voice-247 --update-env
+```
+
+### Slash command tidak muncul
+
+Pastikan `CLIENT_ID` dan `GUILD_ID` benar, kemudian:
+
+```bash
+npm run deploy
+```
+
+### Bot tidak kembali setelah reboot VPS
+
+```bash
+pm2 save
+pm2 startup
+systemctl status pm2-$USER
+```
+
+### Melihat log
+
+```bash
+pm2 logs discord-voice-247 --lines 100
+```
+
+## Keamanan
+
+- Jangan pernah menyimpan token di Git, issue, screenshot, atau chat.
+- Jalankan bot sebagai user non-root jika lingkungan deployment memungkinkan.
+- Batasi akses file `.env` pada Linux dengan `chmod 600 .env`.
+- Ikuti panduan pelaporan di [SECURITY.md](SECURITY.md).
+
+## Lisensi
+
+Dirilis di bawah [MIT License](LICENSE).
