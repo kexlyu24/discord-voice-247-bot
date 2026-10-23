@@ -50,9 +50,9 @@ client.once(Events.ClientReady, async (c) => {
   console.log(`🛡️ Sistem 24/7 Voice Anti-Disconnect aktif`);
   console.log(`=================================================\n`);
 
-  // Set Rich Presence / Aktivitas bot
+  // Set aktivitas Discord: "Watching NOIRÉL"
   c.user.setPresence({
-    activities: [{ name: 'Voice Channel 24/7 🛡️', type: ActivityType.Custom }],
+    activities: [{ name: 'NOIRÉL', type: ActivityType.Watching }],
     status: 'online',
   });
 
