@@ -1,4 +1,36 @@
+const os = require('os');
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+
+function readCpuTimes() {
+  return os.cpus().reduce(
+    (totals, cpu) => {
+      totals.idle += cpu.times.idle;
+      totals.total += Object.values(cpu.times).reduce((sum, time) => sum + time, 0);
+      return totals;
+    },
+    { idle: 0, total: 0 }
+  );
+}
+
+async function getVpsMetrics() {
+  const start = readCpuTimes();
+  await new Promise((resolve) => setTimeout(resolve, 250));
+  const end = readCpuTimes();
+  const totalDelta = end.total - start.total;
+  const idleDelta = end.idle - start.idle;
+  const cpuUsage = totalDelta > 0 ? ((totalDelta - idleDelta) / totalDelta) * 100 : 0;
+
+  const totalRam = os.totalmem();
+  const usedRam = totalRam - os.freemem();
+  const toGiB = (bytes) => (bytes / 1024 ** 3).toFixed(2);
+
+  return {
+    cpuUsage: cpuUsage.toFixed(1),
+    usedRam: toGiB(usedRam),
+    totalRam: toGiB(totalRam),
+    ramUsage: ((usedRam / totalRam) * 100).toFixed(1),
+  };
+}
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -10,6 +42,7 @@ module.exports = {
 
     try {
       const status = voiceManager.getStatus();
+      const vps = await getVpsMetrics();
       const botMember = interaction.guild.members.me;
       const actualChannel = botMember?.voice?.channel;
 
@@ -53,6 +86,16 @@ module.exports = {
           {
             name: '⏱️ Uptime Bot',
             value: `\`${status.uptime}\``,
+            inline: true,
+          },
+          {
+            name: '🖥️ CPU VPS',
+            value: `\`${vps.cpuUsage}%\``,
+            inline: true,
+          },
+          {
+            name: '💾 RAM VPS',
+            value: `\`${vps.usedRam} / ${vps.totalRam} GiB (${vps.ramUsage}%)\``,
             inline: true,
           },
           {
