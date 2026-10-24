@@ -52,6 +52,7 @@ class VoiceManager {
     this.watchdogTimer = null;
     this.reconnectTimer = null;
     this.isReconnecting = false;
+    this.connectedAt = null;
     this.settingsPath = path.join(__dirname, '..', '..', 'data', 'settings.json');
     this.settings = this.loadSettings();
 
@@ -158,6 +159,9 @@ class VoiceManager {
 
     connection.on(VoiceConnectionStatus.Ready, () => {
       console.log(`[VoiceManager] Berhasil terhubung ke Voice Channel! (Status: Ready)`);
+      if (!this.connectedAt) {
+        this.connectedAt = Date.now();
+      }
       this.startKeepAlive(connection);
     });
 
@@ -244,6 +248,7 @@ class VoiceManager {
    * Membersihkan referensi koneksi aktif
    */
   cleanupConnection() {
+    this.connectedAt = null;
     this.stopKeepAlive();
     if (this.connection) {
       try {
@@ -356,6 +361,20 @@ class VoiceManager {
     const minutes = Math.floor((uptimeSeconds % 3600) / 60);
     const seconds = uptimeSeconds % 60;
     const uptimeStr = `${days}h ${hours}j ${minutes}m ${seconds}d`;
+    if (!this.connectedAt && this.connection && this.connection.state.status === VoiceConnectionStatus.Ready) {
+      this.connectedAt = Date.now();
+    }
+
+    let voiceDurationStr = 'Tidak terhubung';
+    if (this.connectedAt && this.connection && this.connection.state.status === VoiceConnectionStatus.Ready) {
+      const diffSec = Math.max(0, Math.floor((Date.now() - this.connectedAt) / 1000));
+      const vDays = Math.floor(diffSec / (3600 * 24));
+      const vHours = Math.floor((diffSec % (3600 * 24)) / 3600);
+      const vMinutes = Math.floor((diffSec % 3600) / 60);
+      const vSeconds = diffSec % 60;
+      voiceDurationStr = `${vDays}h ${vHours}j ${vMinutes}m ${vSeconds}d`;
+    }
+
 
     return {
       guildName: guild ? guild.name : 'Belum diatur',
@@ -366,6 +385,8 @@ class VoiceManager {
       connectionStatus,
       wsPing: this.client.ws.ping,
       uptime: uptimeStr,
+      connectedAt: this.connectedAt,
+      voiceDuration: voiceDurationStr,
     };
   }
 }

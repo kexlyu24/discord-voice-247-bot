@@ -79,6 +79,14 @@ module.exports = {
             inline: true,
           },
           {
+            name: '⏳ Lama di Voice',
+            value:
+              status.connectionStatus === 'ready' && status.connectedAt
+                ? `\`${status.voiceDuration}\` (<t:${Math.floor(status.connectedAt / 1000)}:R>)`
+                : `\`${status.voiceDuration}\``,
+            inline: true,
+          },
+          {
             name: '📶 Ping Gateway',
             value: `\`${interaction.client.ws.ping >= 0 ? interaction.client.ws.ping : 0} ms\``,
             inline: true,

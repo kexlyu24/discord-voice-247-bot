@@ -37,7 +37,7 @@ Konfigurasi channel, mode 24/7, dan Rich Presence disimpan di `data/settings.jso
 | `/join [channel]` | Semua anggota | Bergabung ke channel yang dipilih atau channel pengguna, lalu mengaktifkan mode 24/7. |
 | `/leave` | Semua anggota | Keluar dari voice channel dan menonaktifkan mode 24/7. |
 | `/stay <aktif>` | Semua anggota | Mengaktifkan atau menonaktifkan auto-reconnect. |
-| `/status` | Semua anggota | Menampilkan voice target, RTC, ping, uptime, CPU VPS, dan RAM VPS. |
+| `/status` | Semua anggota | Menampilkan voice target, RTC, durasi di voice, ping, uptime, CPU VPS, dan RAM VPS. |
 | `/presence <tipe> <teks>` | Administrator | Mengatur aktivitas `Watching`, `Playing`, `Listening`, atau `Competing`. |
 
 Contoh:
