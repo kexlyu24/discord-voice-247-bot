@@ -8,6 +8,7 @@ const {
   Events,
 } = require('discord.js');
 const { VoiceManager } = require('./managers/voiceManager');
+const { AnalyticsManager } = require('./managers/analyticsManager');
 const { applyPresence } = require('./utils/presence');
 
 const token = process.env.DISCORD_TOKEN;
@@ -39,9 +40,11 @@ for (const file of commandFiles) {
   }
 }
 
-// Inisialisasi VoiceManager engine
+// Inisialisasi VoiceManager engine dan AnalyticsManager
 const voiceManager = new VoiceManager(client);
-
+const analyticsManager = new AnalyticsManager(client);
+client.analyticsManager = analyticsManager;
+voiceManager.analyticsManager = analyticsManager;
 // Event: Client Ready
 client.once(Events.ClientReady, async (c) => {
   console.log(`\n=================================================`);
@@ -49,6 +52,8 @@ client.once(Events.ClientReady, async (c) => {
   console.log(`🌐 Terhubung ke ${c.guilds.cache.size} server Discord`);
   console.log(`🛡️ Sistem 24/7 Voice Anti-Disconnect aktif`);
   console.log(`=================================================\n`);
+  console.log(`📈 Voice Analytics & Hangout Intelligence aktif`);
+  analyticsManager.initializeActiveMembers();
 
   // Terapkan presence sekali saat startup; pemanggilan ulang akan mereset timer aktivitas Discord.
   applyPresence(c.user, voiceManager.settings.presence);
@@ -76,7 +81,13 @@ client.on(Events.VoiceStateUpdate, (oldState, newState) => {
   try {
     voiceManager.handleVoiceStateUpdate(oldState, newState);
   } catch (err) {
-    console.error(`[Event VoiceStateUpdate] Error:`, err.message);
+    console.error(`[Event VoiceStateUpdate - VoiceManager] Error:`, err.message);
+  }
+
+  try {
+    analyticsManager.handleVoiceStateUpdate(oldState, newState);
+  } catch (err) {
+    console.error(`[Event VoiceStateUpdate - AnalyticsManager] Error:`, err.message);
   }
 });
 
@@ -135,6 +146,11 @@ process.on('uncaughtException', (err, origin) => {
 // Graceful Shutdown
 const cleanup = () => {
   console.log('\n[Shutdown] Menutup koneksi dan mematikan bot...');
+  try {
+    analyticsManager.close();
+  } catch (err) {
+    console.error('[AnalyticsManager Close Error]:', err.message);
+  }
   voiceManager.cleanupConnection();
   client.destroy();
   process.exit(0);

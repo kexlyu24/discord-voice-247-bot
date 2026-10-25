@@ -28,6 +28,7 @@ Konfigurasi channel, mode 24/7, dan Rich Presence disimpan di `data/settings.jso
 - **Persistent state** — channel target dan presence bertahan setelah restart.
 - **VPS monitoring** — `/status` menampilkan penggunaan CPU dan RAM host.
 - **Rich Presence** — administrator dapat mengubah aktivitas bot dari Discord.
+- **Voice Analytics & Hangout Intelligence** — SQLite lokal tanpa dependensi eksternal, visualisasi jam nongkrong ASCII, tracking streak hari kumpul, dan rekor sesi kumpul.
 - **PM2 ready** — konfigurasi production dan auto-start setelah reboot tersedia.
 
 ## Slash commands
@@ -38,6 +39,7 @@ Konfigurasi channel, mode 24/7, dan Rich Presence disimpan di `data/settings.jso
 | `/leave` | Semua anggota | Keluar dari voice channel dan menonaktifkan mode 24/7. |
 | `/stay <aktif>` | Semua anggota | Mengaktifkan atau menonaktifkan auto-reconnect. |
 | `/status` | Semua anggota | Menampilkan voice target, RTC, durasi di voice, ping, uptime, CPU VPS, dan RAM VPS. |
+| `/insights <heatmap|records>` | Semua anggota | Analitik voice server: visualisasi ASCII heatmap jam nongkrong dan rekor tongkrongan. |
 | `/presence <tipe> <teks>` | Administrator | Mengatur aktivitas `Watching`, `Playing`, `Listening`, atau `Competing`. |
 
 Contoh:
