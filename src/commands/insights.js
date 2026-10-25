@@ -10,7 +10,7 @@ module.exports = {
     .addSubcommand((subcommand) =>
       subcommand
         .setName('heatmap')
-        .setDescription('Visualisasi ASCII heatmap jam nongkrong server')
+        .setDescription('Visualisasi heatmap jam aktif voice server')
         .addIntegerOption((option) =>
           option
             .setName('days')
@@ -23,7 +23,7 @@ module.exports = {
     .addSubcommand((subcommand) =>
       subcommand
         .setName('records')
-        .setDescription('Rekor tongkrongan: sesi terlama, streak hari kumpul, dan top active members')
+        .setDescription('Rekor durasi sesi kumpul, streak harian, dan top active members')
     ),
 
   async execute(interaction, voiceManager) {
@@ -63,33 +63,37 @@ module.exports = {
 
         const peakText =
           peakDuration > 0
-            ? `${DAY_NAMES[peakDay]} pukul ${String(peakHour).padStart(2, '0')}:00 WIB (${formatDuration(
+            ? `**${DAY_NAMES[peakDay]}**, ${String(peakHour).padStart(2, '0')}:00 WIB\n${formatDuration(
                 peakDuration
-              )})`
-            : 'Belum ada aktivitas tercatat';
+              )} total`
+            : 'Belum ada aktivitas';
+
+        const totalDurationText =
+          heatmapData.grandTotal > 0
+            ? `**${formatDuration(heatmapData.grandTotal)}**\nRentang ${days} hari`
+            : '0s';
 
         const embed = new EmbedBuilder()
-          .setColor(0x5865f2)
-          .setTitle(`📅 Heatmap Jam Nongkrong Voice (${days} Hari Terakhir)`)
+          .setColor(0x2b2d31)
+          .setTitle(`Aktivitas Voice • ${days} Hari Terakhir`)
           .setDescription(
-            `Visualisasi kepadatan jam nongkrong member server berdasarkan waktu **WIB (UTC+7)**:\n\n` +
+            `Distribusi jam aktif voice channel server (WIB).\n\n` +
               `\`\`\`text\n${asciiHeatmap}\n\`\`\`\n` +
-              `**Keterangan Level Kepadatan:**\n` +
-              `\`░\` Sepi / Kosong  •  \`▒\` Sedang  •  \`▓\` Ramai  •  \`█\` Sangat Ramai`
+              `\`·\` Kosong   \`▪\` Rendah   \`■\` Ramai   \`█\` Puncak`
           )
           .addFields(
             {
-              name: '⏱️ Total Durasi Terpantau',
-              value: `\`${formatDuration(heatmapData.grandTotal)}\``,
+              name: 'Waktu Puncak',
+              value: peakText,
               inline: true,
             },
             {
-              name: '🔥 Jam Paling Ramai (Peak)',
-              value: `\`${peakText}\``,
+              name: 'Total Durasi',
+              value: totalDurationText,
               inline: true,
             }
           )
-          .setFooter({ text: 'Voice Analytics & Hangout Intelligence • Discord Voice 24/7' })
+          .setFooter({ text: 'NOIRÉL • Voice Insights' })
           .setTimestamp();
 
         return interaction.editReply({ embeds: [embed] });
@@ -99,13 +103,12 @@ module.exports = {
         const records = analyticsManager.getRecords();
 
         // 1. Rekor kumpul (hangout)
-        let hangoutText = 'Belum ada sesi kumpul (>= 2 orang) yang tercatat.';
+        let hangoutText = 'Belum ada sesi bersama yang tercatat.';
         if (records.longestHangout && records.longestHangout.duration_seconds > 0) {
           const h = records.longestHangout;
           hangoutText =
-            `⏱️ **${formatDuration(h.duration_seconds)}**\n` +
-            `👥 Partisipan Puncak: **${h.user_count} orang**\n` +
-            `🗓️ Waktu: <t:${h.started_at}:f> (<t:${h.started_at}:R>)`;
+            `**${formatDuration(h.duration_seconds)}** • ${h.user_count} member\n` +
+            `<t:${h.started_at}:f> (<t:${h.started_at}:R>)`;
         }
 
         // 2. Rekor individu
@@ -113,54 +116,55 @@ module.exports = {
         if (records.longestIndividual && records.longestIndividual.duration_seconds > 0) {
           const ind = records.longestIndividual;
           individualText =
-            `👤 <@${ind.user_id}> (\`${ind.username}\`)\n` +
-            `⏱️ Durasi: **${formatDuration(ind.duration_seconds)}**\n` +
-            `🗓️ Sesi: <t:${ind.joined_at}:f> (<t:${ind.joined_at}:R>)`;
+            `<@${ind.user_id}> — **${formatDuration(ind.duration_seconds)}**\n` +
+            `<t:${ind.joined_at}:f> (<t:${ind.joined_at}:R>)`;
         }
 
         // 3. Top active members
         let topMembersText = 'Belum ada aktivitas member dalam 30 hari terakhir.';
         if (records.topActiveMembers && records.topActiveMembers.length > 0) {
-          const medals = ['🥇', '🥈', '🥉'];
           topMembersText = records.topActiveMembers
             .map((m, index) => {
-              const medal = medals[index] || `**#${index + 1}**`;
-              return `${medal} <@${m.user_id}> (\`${m.username}\`)\n   ⏱️ **${formatDuration(
+              const rank = String(index + 1).padStart(2, '0');
+              return `\`${rank}\` <@${m.user_id}> — **${formatDuration(
                 m.total_duration
               )}** • ${m.session_count} sesi`;
             })
             .join('\n');
         }
 
+        const streakText =
+          records.currentStreak > 0
+            ? `**${records.currentStreak} hari** berturut-turut\n*Aktivitas bersama ≥ 2 member*`
+            : '0 hari\n*Aktivitas bersama ≥ 2 member*';
+
         const embed = new EmbedBuilder()
-          .setColor(0xfee75c)
-          .setTitle('🏆 Rekor Tongkrongan & Hangout Intelligence')
-          .setDescription('Pencapaian rekor nongkrong bareng dan member paling setia di voice channel:')
+          .setColor(0x2b2d31)
+          .setTitle('Rekor & Pencapaian Voice')
+          .setDescription('Catatan rekor durasi sesi dan keaktifan member di voice channel.')
           .addFields(
             {
-              name: '🔥 Current Hangout Streak',
-              value: `\`${records.currentStreak} Hari Berturut-turut\` ${
-                records.currentStreak > 0 ? '🎉' : '💤'
-              }\n*(Kumpul >= 2 orang manusia di VC)*`,
+              name: 'Streak Kumpul Harian',
+              value: streakText,
               inline: false,
             },
             {
-              name: '👥 Rekor Kumpul Terlama (>= 2 Orang)',
+              name: 'Sesi Berkelompok Terlama',
               value: hangoutText,
               inline: false,
             },
             {
-              name: '👤 Rekor Individu Terlama',
+              name: 'Sesi Individu Terlama',
               value: individualText,
               inline: false,
             },
             {
-              name: '🥇 Top 3 Member Teraktif (30 Hari Terakhir)',
+              name: 'Top 3 Member Teraktif (30 Hari)',
               value: topMembersText,
               inline: false,
             }
           )
-          .setFooter({ text: 'Voice Analytics & Hangout Intelligence • Discord Voice 24/7' })
+          .setFooter({ text: 'NOIRÉL • Voice Insights' })
           .setTimestamp();
 
         return interaction.editReply({ embeds: [embed] });

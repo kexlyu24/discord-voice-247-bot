@@ -3,13 +3,13 @@ const path = require('path');
 const { DatabaseSync } = require('node:sqlite');
 
 /**
- * Unicode density blocks untuk visualisasi heatmap:
- * Level 0: ░ (sepi/kosong)
- * Level 1: ▒ (sedang)
- * Level 2: ▓ (ramai)
- * Level 3: █ (sangat ramai)
+ * Density blocks untuk visualisasi heatmap monospaced:
+ * Level 0: · (kosong / 0 detik)
+ * Level 1: ▪ (rendah / 1% - 33% dari max)
+ * Level 2: ■ (ramai / 34% - 66% dari max)
+ * Level 3: █ (puncak / 67% - 100% dari max)
  */
-const HEATMAP_BLOCKS = ['░', '▒', '▓', '█'];
+const HEATMAP_BLOCKS = ['·', '▪', '■', '█'];
 
 /**
  * Format detik ke format waktu ringkas (contoh: "2j 15m 30s" atau "45m 12s")
@@ -351,10 +351,10 @@ class AnalyticsManager {
     }
 
     // Normalisasi kepadatan ke 4 level:
-    // Level 0: ░ (0 / kosong)
-    // Level 1: ▒ (1% - 33% dari max)
-    // Level 2: ▓ (34% - 66% dari max)
-    // Level 3: █ (67% - 100% dari max)
+    // Level 0: · (kosong / 0 detik)
+    // Level 1: ▪ (rendah / 1% - 33% dari max)
+    // Level 2: ■ (ramai / 34% - 66% dari max)
+    // Level 3: █ (puncak / 67% - 100% dari max)
     for (let d = 0; d < 7; d++) {
       for (let h = 0; h < 24; h++) {
         const dur = durations[d][h];
@@ -384,17 +384,19 @@ class AnalyticsManager {
   }
 
   /**
-   * Format data heatmap ke tabel ASCII monospaced yang rapi
-   * Header jam: 00 03 06 09 12 15 18 21
-   * Baris hari: Sen, Sel, Rab, Kam, Jum, Sab, Min
+   * Format data heatmap ke tabel monospaced yang sleek dan mobile-friendly (< 35 karakter).
+   * Menampilkan 24 jam penuh (1 karakter per jam) yang dikelompokkan ke dalam 6 kuadran 4 jam
+   * dengan penanda jam genap (00, 04, 08, 12, 16, 20).
+   *
    * @param {object} heatmapData - Hasil dari getHeatmapData()
    * @returns {string}
    */
   formatAsciiHeatmap(heatmapData) {
-    const { durations, maxDuration } = heatmapData;
+    const { durations, levels, maxDuration } = heatmapData;
 
-    // Header tabel jam monospaced
-    const lines = ['Jam: 00 03 06 09 12 15 18 21'];
+    // Header penanda waktu genap (interval 4 jam, kelipatan 2)
+    // Total lebar pas di layar mobile Discord: 34 karakter
+    const lines = ['     00   04   08   12   16   20  '];
 
     // Urutan hari: Senin (1) s/d Minggu (0)
     const dayConfigs = [
@@ -407,45 +409,28 @@ class AnalyticsManager {
       { dayIndex: 0, label: 'Min' },
     ];
 
-    // Slot jam 3-tahunan: 0, 3, 6, 9, 12, 15, 18, 21
-    const hourSlots = [0, 3, 6, 9, 12, 15, 18, 21];
-
-    // Nilai skala maksimum untuk segmen 1.5 jam:
-    const segMax = (maxDuration || 0) * 1.5;
-
-    const getBlockChar = (val) => {
-      if (!val || val <= 0 || segMax <= 0) return HEATMAP_BLOCKS[0];
-      const ratio = val / segMax;
+    const getBlockChar = (dayIdx, hour) => {
+      if (levels && levels[dayIdx] && levels[dayIdx][hour] !== undefined) {
+        return HEATMAP_BLOCKS[levels[dayIdx][hour]] || HEATMAP_BLOCKS[0];
+      }
+      const dur = (durations && durations[dayIdx] && durations[dayIdx][hour]) || 0;
+      if (!dur || !maxDuration || maxDuration <= 0) return HEATMAP_BLOCKS[0];
+      const ratio = dur / maxDuration;
       if (ratio <= 0.33) return HEATMAP_BLOCKS[1];
       if (ratio <= 0.66) return HEATMAP_BLOCKS[2];
       return HEATMAP_BLOCKS[3];
     };
 
     for (const { dayIndex, label } of dayConfigs) {
-      const slotBlocks = [];
-
-      for (const startHour of hourSlots) {
-        const h0 = startHour;
-        const h1 = startHour + 1;
-        const h2 = startHour + 2;
-
-        const dur0 = durations[dayIndex][h0] || 0;
-        const dur1 = durations[dayIndex][h1] || 0;
-        const dur2 = durations[dayIndex][h2] || 0;
-
-        // Bagi 3 jam ke dalam 2 karakter blok representatif:
-        // Karakter 1: jam h0 + separuh jam h1
-        // Karakter 2: separuh jam h1 + jam h2
-        const val1 = dur0 + dur1 * 0.5;
-        const val2 = dur1 * 0.5 + dur2;
-
-        const char1 = getBlockChar(val1);
-        const char2 = getBlockChar(val2);
-
-        slotBlocks.push(`${char1}${char2}`);
+      const chunks = [];
+      for (let startHour = 0; startHour < 24; startHour += 4) {
+        let chunk = '';
+        for (let h = startHour; h < startHour + 4; h++) {
+          chunk += getBlockChar(dayIndex, h);
+        }
+        chunks.push(chunk);
       }
-
-      lines.push(`${label}: ${slotBlocks.join(' ')}`);
+      lines.push(`${label}  ${chunks.join(' ')}`);
     }
 
     return lines.join('\n');
