@@ -16,7 +16,6 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName('presence')
     .setDescription('Mengatur Rich Presence bot')
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .addStringOption((option) =>
       option
         .setName('tipe')
@@ -39,6 +38,21 @@ module.exports = {
 
   async execute(interaction, voiceManager) {
     await interaction.deferReply({ ephemeral: true });
+
+    const hasPermission =
+      interaction.memberPermissions?.has(PermissionFlagsBits.Administrator) ||
+      interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild);
+
+    if (!hasPermission) {
+      return interaction.editReply({
+        embeds: [
+          new EmbedBuilder()
+            .setColor(0xed4245)
+            .setTitle('❌ Akses Ditolak')
+            .setDescription('Perintah ini hanya dapat digunakan oleh Administrator atau Pengelola Server.'),
+        ],
+      });
+    }
 
     const requested = {
       type: interaction.options.getString('tipe', true),
