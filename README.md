@@ -42,6 +42,8 @@ Konfigurasi channel, mode 24/7, dan Rich Presence disimpan di `data/settings.jso
 | `/insights <heatmap|records>` | Semua anggota | Analitik voice server: visualisasi ASCII heatmap jam nongkrong dan rekor tongkrongan. |
 | `/presence <tipe> <teks>` | Administrator | Mengatur aktivitas `Watching`, `Playing`, `Listening`, atau `Competing`. |
 
+`/insights records` menampilkan **Rekor Voice**: streak bersama ≥ 2 orang (non-bot), durasi sesi bersama terlama dan puncak peserta, sesi individu terlama, serta top 3 anggota selama 30 hari dengan durasi dan jumlah sesi. Rekor sesi memakai satu tanggal singkat; durasi memakai hari/jam/menit (detik untuk durasi di bawah semenit). Ringkasan memakai field inline yang dapat tersusun vertikal di layar kecil.
+
 Contoh:
 
 ```text

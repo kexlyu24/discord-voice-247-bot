@@ -3,6 +3,21 @@ const { formatDuration } = require('../managers/analyticsManager');
 
 const DAY_NAMES = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 
+// Tampilan records memakai satuan lengkap; detik hanya untuk durasi di bawah semenit.
+function formatRecordDuration(totalSeconds) {
+  if (!totalSeconds || totalSeconds <= 0) return '0 detik';
+  if (totalSeconds < 60) return `${Math.floor(totalSeconds)} detik`;
+
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds / 3600) % 24);
+  const minutes = Math.floor((totalSeconds / 60) % 60);
+  const parts = [];
+  if (days > 0) parts.push(`${days} hari`);
+  if (hours > 0) parts.push(`${hours} jam`);
+  if (minutes > 0) parts.push(`${minutes} menit`);
+  return parts.join(' ');
+}
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('insights')
@@ -100,72 +115,63 @@ module.exports = {
       }
 
       if (subcommand === 'records') {
-        const records = analyticsManager.getRecords();
+        const records = analyticsManager.getRecords() || {};
 
-        // 1. Rekor kumpul (hangout)
-        let hangoutText = 'Belum ada sesi bersama yang tercatat.';
+        let hangoutText = 'Belum ada sesi bersama.';
         if (records.longestHangout && records.longestHangout.duration_seconds > 0) {
           const h = records.longestHangout;
           hangoutText =
-            `**${formatDuration(h.duration_seconds)}** • ${h.user_count} member\n` +
-            `<t:${h.started_at}:f> (<t:${h.started_at}:R>)`;
+            `**${formatRecordDuration(h.duration_seconds)}**\n` +
+            `Puncak ${h.user_count} peserta` +
+            (h.started_at != null ? ` · <t:${h.started_at}:d>` : '');
         }
 
-        // 2. Rekor individu
-        let individualText = 'Belum ada sesi individu yang tercatat.';
+        let individualText = 'Belum ada sesi individu.';
         if (records.longestIndividual && records.longestIndividual.duration_seconds > 0) {
           const ind = records.longestIndividual;
           individualText =
-            `<@${ind.user_id}> — **${formatDuration(ind.duration_seconds)}**\n` +
-            `<t:${ind.joined_at}:f> (<t:${ind.joined_at}:R>)`;
+            `<@${ind.user_id}> — ${formatRecordDuration(ind.duration_seconds)}` +
+            (ind.joined_at != null ? ` · <t:${ind.joined_at}:d>` : '');
         }
 
-        // 3. Top active members
-        let topMembersText = 'Belum ada aktivitas member dalam 30 hari terakhir.';
+        let topMembersText = 'Belum ada aktivitas dalam 30 hari terakhir.';
         if (records.topActiveMembers && records.topActiveMembers.length > 0) {
           topMembersText = records.topActiveMembers
             .map((m, index) => {
               const rank = String(index + 1).padStart(2, '0');
-              return `\`${rank}\` <@${m.user_id}> — **${formatDuration(
-                m.total_duration
-              )}** • ${m.session_count} sesi`;
+              return `\`${rank}\` <@${m.user_id}> — ${formatRecordDuration(m.total_duration)} · ${m.session_count} sesi`;
             })
             .join('\n');
         }
 
-        const streakText =
-          records.currentStreak > 0
-            ? `**${records.currentStreak} hari** berturut-turut\n*Aktivitas bersama ≥ 2 member*`
-            : '0 hari\n*Aktivitas bersama ≥ 2 member*';
+        const streakText = `**${records.currentStreak || 0} hari** berturut-turut\nBersama ≥ 2 orang (non-bot)`;
 
         const embed = new EmbedBuilder()
           .setColor(0x2b2d31)
-          .setTitle('Rekor & Pencapaian Voice')
-          .setDescription('Catatan rekor durasi sesi dan keaktifan member di voice channel.')
+          .setTitle('Rekor Voice')
           .addFields(
             {
-              name: 'Streak Kumpul Harian',
+              name: 'Streak',
               value: streakText,
-              inline: false,
+              inline: true,
             },
             {
-              name: 'Sesi Berkelompok Terlama',
+              name: 'Sesi bersama',
               value: hangoutText,
-              inline: false,
+              inline: true,
             },
             {
-              name: 'Sesi Individu Terlama',
+              name: 'Sesi individu terlama',
               value: individualText,
               inline: false,
             },
             {
-              name: 'Top 3 Member Teraktif (30 Hari)',
+              name: 'Top 3 · 30 hari terakhir',
               value: topMembersText,
               inline: false,
             }
           )
-          .setFooter({ text: 'NOIRÉL • Voice Insights' })
-          .setTimestamp();
+          .setFooter({ text: 'NOIRÉL • Voice Insights' });
 
         return interaction.editReply({ embeds: [embed] });
       }
