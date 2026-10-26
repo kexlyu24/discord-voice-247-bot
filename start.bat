@@ -3,29 +3,29 @@ title Discord Voice 24/7 Bot
 color 0b
 
 echo ========================================================
-echo         MEMULAI DISCORD VOICE 24/7 NONSTOP BOT          
+echo         STARTING DISCORD VOICE 24/7 BOT
 echo ========================================================
 echo.
 
 if not exist .env (
-    echo [PERINGATAN] File .env tidak ditemukan!
-    echo Silakan salin .env.example menjadi .env lalu isi DISCORD_TOKEN dan CLIENT_ID Anda.
+    echo [WARNING] The .env file was not found!
+    echo Copy .env.example to .env, then set your DISCORD_TOKEN and CLIENT_ID.
     echo.
     pause
     exit /b
 )
 
 if not exist node_modules (
-    echo [INFO] Folder node_modules belum ada. Menjalankan npm install...
+    echo [INFO] The node_modules folder is missing. Running npm install...
     call npm install
     echo.
 )
 
 :loop
-echo [%date% %time%] Memulai proses bot...
+echo [%date% %time%] Starting the bot process...
 node src/index.js
 echo.
-echo [PERINGATAN] Proses bot terhenti atau crash!
-echo Merestart otomatis dalam 5 detik... (Tekan Ctrl+C untuk membatalkan)
+echo [WARNING] The bot process stopped or crashed!
+echo Restarting automatically in 5 seconds... (Press Ctrl+C to cancel)
 timeout /t 5 /nobreak >nul
 goto loop

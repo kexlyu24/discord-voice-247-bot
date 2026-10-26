@@ -1,66 +1,32 @@
-<div align="center">
-
 # Discord Voice 24/7
 
-**Bot Discord ringan untuk menjaga satu voice channel tetap aktif sepanjang waktu.**
+A self-hosted Discord bot for maintaining a voice connection, with silent keepalive, automatic reconnection, configurable activity presence, and local voice-activity statistics.
 
-[![Node.js](https://img.shields.io/badge/Node.js-22.12%2B-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
-[![discord.js](https://img.shields.io/badge/discord.js-v14-5865F2?logo=discord&logoColor=white)](https://discord.js.org/)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![GitHub last commit](https://img.shields.io/github/last-commit/kexlyu24/discord-voice-247-bot)](https://github.com/kexlyu24/discord-voice-247-bot/commits/main)
+Built with discord.js v14 and `@discordjs/voice`. Licensed under the [MIT License](LICENSE).
 
-Silent keepalive · Auto-reconnect · Persistent configuration · VPS monitoring · Configurable Rich Presence
+## Features
 
-</div>
+- Joins a selected voice channel and attempts to reconnect when disconnected or moved.
+- Sends Opus silence frames without FFmpeg and checks connection state every 30 seconds.
+- Persists the target channel, reconnect mode, and activity presence across restarts.
+- Reports voice connection state, Gateway latency, process uptime, and host CPU/RAM usage.
+- Stores voice-session metadata in local SQLite for heatmaps and session records.
 
-## Tentang proyek
+Repository documentation is in English. The bot-facing command descriptions, option names, and replies remain in Indonesian; this is not a runtime UI translation.
 
-Discord Voice 24/7 mempertahankan bot di voice channel yang dipilih, termasuk saat channel kosong. Bot mengirim Opus silence frames untuk menjaga jalur audio aktif, memantau koneksi setiap 30 detik, dan mencoba bergabung kembali ketika terputus, dipindahkan, atau dikeluarkan.
+## Requirements
 
-Konfigurasi channel, mode 24/7, dan Rich Presence disimpan di `data/settings.json`. Setelah proses atau VPS restart, bot memulihkan konfigurasi tersebut secara otomatis.
+- **Node.js 24 LTS recommended**, or Node.js **22.13.0 or later within the 22.x release line**, with npm. Analytics uses built-in `node:sqlite`; the locked dependencies also include a Node 22.13+ requirement.
+- A Discord application and bot token from the [Discord Developer Portal](https://discord.com/developers/applications).
+- A continuously running host with writable local storage and outbound HTTPS, WebSocket, and UDP connectivity.
 
-## Fitur
+Invite the application with the `bot` and `applications.commands` scopes. Grant the bot **View Channels**, **Connect**, and **Speak** in its target voice channel, and **Send Messages** and **Embed Links** where commands are used. Check channel-level permission overrides as well. Administrator permission is not required for the bot.
 
-- **Voice 24/7** — tetap berada di channel target saat tidak ada anggota lain.
-- **Silent keepalive** — Opus silence stream tanpa FFmpeg.
-- **Auto-reconnect** — menangani perubahan voice state dan gangguan RTC.
-- **Watchdog 30 detik** — mendeteksi koneksi yang tidak lagi sinkron.
-- **Persistent state** — channel target dan presence bertahan setelah restart.
-- **VPS monitoring** — `/status` menampilkan penggunaan CPU dan RAM host.
-- **Rich Presence** — administrator dapat mengubah aktivitas bot dari Discord.
-- **Voice Analytics & Hangout Intelligence** — SQLite lokal tanpa dependensi eksternal, visualisasi jam nongkrong ASCII, tracking streak hari kumpul, dan rekor sesi kumpul.
-- **PM2 ready** — konfigurasi production dan auto-start setelah reboot tersedia.
+Only the non-privileged `Guilds` and `GuildVoiceStates` Gateway intents are requested. No privileged intents or FFmpeg installation are needed.
 
-## Slash commands
+## Quick start
 
-| Command | Akses | Fungsi |
-|---|---|---|
-| `/join [channel]` | Semua anggota | Bergabung ke channel yang dipilih atau channel pengguna, lalu mengaktifkan mode 24/7. |
-| `/leave` | Semua anggota | Keluar dari voice channel dan menonaktifkan mode 24/7. |
-| `/stay <aktif>` | Semua anggota | Mengaktifkan atau menonaktifkan auto-reconnect. |
-| `/status` | Semua anggota | Menampilkan voice target, RTC, durasi di voice, ping, uptime, CPU VPS, dan RAM VPS. |
-| `/insights <heatmap|records>` | Semua anggota | Analitik voice server: visualisasi ASCII heatmap jam nongkrong dan rekor tongkrongan. |
-| `/presence <tipe> <teks>` | Administrator | Mengatur aktivitas `Watching`, `Playing`, `Listening`, atau `Competing`. |
-
-`/insights records` menampilkan **Rekor Voice**: streak bersama ≥ 2 orang (non-bot), durasi sesi bersama terlama dan puncak peserta, sesi individu terlama, serta top 3 anggota selama 30 hari dengan durasi dan jumlah sesi. Rekor sesi memakai satu tanggal singkat; durasi memakai hari/jam/menit (detik untuk durasi di bawah semenit). Ringkasan memakai field inline yang dapat tersusun vertikal di layar kecil.
-
-Contoh:
-
-```text
-/presence tipe:Watching teks:NOIRÉL
-```
-
-## Persyaratan
-
-- Node.js **22.12.0 atau lebih baru**
-- Bot Discord dengan permission `View Channels`, `Connect`, `Speak`, `Send Messages`, dan `Embed Links`
-- Host yang tetap menyala dan mengizinkan koneksi HTTPS, WebSocket, dan UDP keluar
-
-Privileged Gateway Intents dan FFmpeg tidak diperlukan.
-
-## Instalasi
-
-### 1. Clone dan pasang dependensi
+### 1. Install
 
 ```bash
 git clone https://github.com/kexlyu24/discord-voice-247-bot.git
@@ -68,157 +34,137 @@ cd discord-voice-247-bot
 npm ci
 ```
 
-### 2. Buat konfigurasi
+### 2. Configure
 
-Linux/macOS:
+Copy [`.env.example`](.env.example) to `.env`:
 
 ```bash
+# Linux / macOS
 cp .env.example .env
 ```
 
-Windows:
-
 ```powershell
+# Windows PowerShell
 Copy-Item .env.example .env
 ```
 
-Isi `.env`:
+Edit `.env` locally; never publish your token.
 
-```env
-DISCORD_TOKEN=token_bot_discord
-CLIENT_ID=application_id_bot
-GUILD_ID=id_server_discord
-TARGET_CHANNEL_ID=id_voice_channel
-SELF_DEAF=true
-SELF_MUTE=true
-```
+| Variable | Purpose |
+| --- | --- |
+| `DISCORD_TOKEN` | Required bot token for running the bot and registering commands. |
+| `CLIENT_ID` | Application ID; required for command registration. |
+| `GUILD_ID` | Optional guild ID for guild-scoped command registration. Also needed with `TARGET_CHANNEL_ID` for initial automatic joining. |
+| `TARGET_CHANNEL_ID` | Optional initial voice channel ID. Otherwise, select a channel with `/join`. |
+| `SELF_DEAF` | Defaults to `true` unless explicitly set to `false`. |
+| `SELF_MUTE` | Defaults to `false` unless explicitly set to `true`; the example configuration sets it to `true`. |
 
-| Variabel | Wajib | Keterangan |
-|---|---:|---|
-| `DISCORD_TOKEN` | Ya | Token rahasia dari Discord Developer Portal. |
-| `CLIENT_ID` | Ya | Application ID untuk registrasi slash commands. |
-| `GUILD_ID` | Disarankan | Registrasi command langsung ke satu server. |
-| `TARGET_CHANNEL_ID` | Disarankan | Voice channel yang dimasuki saat startup pertama. |
-| `SELF_DEAF` | Tidak | Default `true`; bot tidak menerima audio anggota. |
-| `SELF_MUTE` | Tidak | Default `false`; atur `true` jika bot harus tampil muted. |
+Saved settings take precedence over environment defaults for the target guild and channel. Changing `.env` does not override an already saved target; use `/join` to change it.
 
-> Jangan commit `.env` atau membagikan token bot. Jika token pernah terekspos, reset segera di Discord Developer Portal.
-
-### 3. Daftarkan command dan jalankan
+### 3. Register commands and start
 
 ```bash
 npm run deploy
 npm start
 ```
 
-Jika command belum tampil setelah deployment, refresh Discord. Registrasi dengan `GUILD_ID` biasanya tersedia segera; registrasi global dapat memerlukan waktu propagasi.
+`npm run deploy` registers the current command set with Discord; it does not start the bot. With `GUILD_ID`, registration targets that guild. Without it, commands are registered globally and may take time to propagate. Registration replaces the application's command set in the selected scope. Re-run it when command definitions change.
 
-## Deployment VPS dengan PM2
+Run `/join` while in a voice channel, or specify its `channel` option. On startup, the bot attempts to restore its saved target when reconnect mode is enabled.
+
+## Commands and permissions
+
+Use commands inside a server. Discord's application-command permissions can further restrict access.
+
+| Command | Application-level access check | Behavior |
+| --- | --- | --- |
+| `/join [channel]` | No member role check | Joins the selected voice or Stage channel, or the caller's current channel, and enables reconnect mode. Explicitly checks the bot's **Connect** permission. |
+| `/leave` | No member role check | Disconnects and disables reconnect mode. |
+| `/stay aktif:<true\|false>` | No member role check | Toggles reconnect mode without leaving. Enabling it requires the bot to be in voice already. |
+| `/status` | No member role check | Shows target/actual channel, RTC state, time in voice, Gateway ping, uptime, and host CPU/RAM metrics. |
+| `/insights heatmap [days]` | No member role check | Displays a voice-activity heatmap; `days` accepts 1–90 and defaults to 30. |
+| `/insights records` | No member role check | Displays the current streak, longest stored group and individual sessions, and top three members over a 30-day window. |
+| `/presence tipe:<choice> teks:<text>` | **Administrator** or **Manage Server** (`ManageGuild`) | Sets Watching, Playing, Listening, or Competing activity; text is limited to 128 characters. |
+
+Example: `/presence tipe:Watching teks:Community voice`
+
+Command replies, including statistics, are generally public; `/presence` replies are ephemeral (visible only to the caller). Restrict command access in Discord if members should not be able to change the voice target, disconnect the bot, or view activity records and host metrics.
+
+## Analytics: what the numbers mean
+
+Analytics records non-bot voice membership, not speech or audio content. It observes voice activity beyond the bot's target channel.
+
+- **Member sessions:** begin when a member joins voice and end when they disconnect. Moving between voice channels does not split a session. Members already connected at startup are timed from that startup, not their original join time.
+- **Heatmap:** sums completed member-session durations into the session's **starting** weekday/hour in **WIB (UTC+7)**. Durations are not split across hourly buckets. The selected window filters by session start time; totals are accumulated member-time, not elapsed channel occupancy or speaking time.
+- **Group sessions:** require at least two non-bot members. Counting prioritizes the bot's current channel, otherwise the channel associated with the event, and finally the most populated voice channel. This is not a separate history for every channel.
+- **Records:** longest sessions use all stored history. The top-three ranking uses sessions started in the last 30 days. A streak counts consecutive WIB dates with completed group activity, starting today or yesterday; a group session is credited to its starting date, even if it spans midnight.
+- **Incomplete sessions:** ongoing sessions are not included in queries until completed or flushed during graceful shutdown. Abrupt termination can lose in-memory sessions; downtime is not backfilled.
+
+**Use one guild per instance.** Voice settings and analytics state are shared across the process; the database has no guild partitioning. Inviting one instance to several guilds can mix statistics and voice controls.
+
+## Persistence and privacy
+
+The bot writes these files under `data/`:
+
+| File | Contents |
+| --- | --- |
+| `settings.json` | Target guild/channel IDs, reconnect mode, and activity presence. |
+| `analytics.db` | Member IDs, usernames, session timestamps/durations, group participant peaks, and daily streak aggregates. |
+
+Keep `data/` on persistent storage and writable by the service account. Back it up with the bot stopped for a consistent copy. Do not commit runtime data or share databases publicly. There is no automatic retention policy or built-in per-member deletion command; operators are responsible for access control, retention, and informing members about collection. See [SECURITY.md](SECURITY.md).
+
+## Deployment
+
+Run one process per configuration and data directory. Do not run the Windows launcher and PM2 against the same instance.
+
+### Linux / VPS with PM2
+
+After completing setup, install PM2 using your host's Node.js installation and run from the repository directory:
 
 ```bash
-sudo npm install -g pm2
+npm install -g pm2
 pm2 start ecosystem.config.cjs
 pm2 save
 pm2 startup
 ```
 
-Jalankan perintah lanjutan yang dicetak oleh `pm2 startup`, lalu verifikasi:
+Follow the host-specific command printed by `pm2 startup` to configure boot startup. Use a dedicated, non-root service account where possible.
 
 ```bash
 pm2 status
-pm2 logs discord-voice-247
+pm2 logs discord-voice-247 --lines 100
 ```
 
-Konfigurasi PM2 menjalankan `src/index.js`, merestart proses yang gagal, dan membatasi restart saat penggunaan memori mencapai 300 MB.
+The [PM2 configuration](ecosystem.config.cjs) runs `src/index.js`, uses a three-second restart delay, and requests a restart at the configured `300M` memory threshold. That threshold is not a hard memory cap or a resource-usage guarantee.
 
-## Menjalankan di Windows
+### Windows
 
-Klik `start.bat` atau jalankan:
+After setup and command registration, run:
 
 ```powershell
 .\start.bat
 ```
 
-Script memasang dependensi jika `node_modules` belum ada dan menjalankan ulang bot lima detik setelah proses berhenti. Komputer harus tetap menyala dan sleep mode harus dimatikan.
+The [launcher](start.bat) requires `.env`, runs `npm install` if `node_modules` is absent, and restarts the bot five seconds after it exits. It does not configure startup after reboot. Keep the computer awake and the launcher running.
 
-## Cara kerja
+### Operational limits and troubleshooting
 
-```mermaid
-flowchart LR
-    A[Discord Gateway] --> B[VoiceManager]
-    B --> C[Discord Voice RTC]
-    B --> D[Opus silence stream]
-    E[Watchdog 30 detik] --> B
-    F[data/settings.json] --> B
-    B --> F
-    G[Slash commands] --> B
-```
+“24/7” describes the reconnect mode, not an uptime guarantee. Discord outages, network/firewall rules, revoked permissions, host sleep, and process failures can interrupt service. CPU and memory requirements vary with activity and retained data.
 
-1. `VoiceManager` bergabung menggunakan adapter voice milik guild.
-2. Setelah RTC berstatus `Ready`, audio player mengirim Opus silence frames.
-3. `voiceStateUpdate` mendeteksi bot keluar atau dipindahkan dari channel target.
-4. Watchdog membandingkan voice state aktual dengan status RTC setiap 30 detik.
-5. Konfigurasi tersimpan dipakai untuk pemulihan setelah restart.
+- **Commands missing:** check application/guild IDs, invitation scopes, and command permissions. Re-register with `npm run deploy`; allow global registrations time to propagate.
+- **Voice stuck connecting:** inspect logs, target-channel permissions, and outbound UDP access. Being listed in a channel does not mean the RTC connection is ready.
+- **No automatic join:** check the saved reconnect setting and target. Use `/join` to select a target; `/leave` disables automatic restoration.
+- **SQLite or engine errors:** check `node --version` in the actual service environment, not only your shell. Use the supported Node version and reinstall with `npm ci`.
+- **Missing recent analytics:** active sessions are not yet queryable; historical sessions from before startup or during downtime cannot be recovered.
 
-## Struktur proyek
+## Source layout
 
-```text
-src/
-├── commands/
-│   ├── join.js
-│   ├── leave.js
-│   ├── presence.js
-│   ├── status.js
-│   └── stay.js
-├── managers/
-│   └── voiceManager.js
-├── utils/
-│   └── presence.js
-├── deploy-commands.js
-└── index.js
-```
+- [`src/index.js`](src/index.js): client initialization, command dispatch, and lifecycle events.
+- [`src/commands/`](src/commands/): slash command definitions and handlers.
+- [`src/managers/voiceManager.js`](src/managers/voiceManager.js): voice connection, keepalive, reconnects, and settings.
+- [`src/managers/analyticsManager.js`](src/managers/analyticsManager.js): SQLite storage and analytics calculations.
+- [`src/deploy-commands.js`](src/deploy-commands.js): command registration.
 
-## Troubleshooting
+## License
 
-### Bot terlihat di channel tetapi RTC terus `Connecting`
-
-Pastikan dependency terbaru terpasang dan restart proses:
-
-```bash
-git pull --ff-only
-npm ci
-pm2 restart discord-voice-247 --update-env
-```
-
-### Slash command tidak muncul
-
-Pastikan `CLIENT_ID` dan `GUILD_ID` benar, kemudian:
-
-```bash
-npm run deploy
-```
-
-### Bot tidak kembali setelah reboot VPS
-
-```bash
-pm2 save
-pm2 startup
-systemctl status pm2-$USER
-```
-
-### Melihat log
-
-```bash
-pm2 logs discord-voice-247 --lines 100
-```
-
-## Keamanan
-
-- Jangan pernah menyimpan token di Git, issue, screenshot, atau chat.
-- Jalankan bot sebagai user non-root jika lingkungan deployment memungkinkan.
-- Batasi akses file `.env` pada Linux dengan `chmod 600 .env`.
-- Ikuti panduan pelaporan di [SECURITY.md](SECURITY.md).
-
-## Lisensi
-
-Dirilis di bawah [MIT License](LICENSE).
+[MIT](LICENSE). See [SECURITY.md](SECURITY.md) for reporting guidance and deployment precautions.
