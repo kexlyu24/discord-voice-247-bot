@@ -109,7 +109,7 @@ module.exports = {
           {
             name: '🔄 Proteksi Otomatis',
             value:
-              '• **NAT UDP Keepalive**: Aktif (Opus Silence Stream)\n• **Watchdog Loop**: Aktif (Interval 30 detik)\n• **Reconnection Engine**: Siap siaga',
+              '• **Standby Voice**: Tanpa pemutaran audio\n• **Watchdog Loop**: Aktif (Interval 30 detik)\n• **Reconnection Engine**: Siap siaga',
             inline: false,
           }
         )

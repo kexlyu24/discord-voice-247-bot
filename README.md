@@ -9,13 +9,13 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![GitHub last commit](https://img.shields.io/github/last-commit/kexlyu24/discord-voice-247-bot)](https://github.com/kexlyu24/discord-voice-247-bot/commits/main)
 
-Silent keepalive · Auto-reconnect · Voice analytics · VPS monitoring · Custom presence
+Idle voice standby · Auto-reconnect · Voice analytics · VPS monitoring · Custom presence
 
 </div>
 
 ## About
 
-Discord Voice 24/7 stays in your selected voice channel, including when it is empty. It sends Opus silence frames, checks connection state every 30 seconds, and attempts to reconnect after disconnections or channel moves.
+Discord Voice 24/7 stays in your selected voice channel, including when it is empty. It does not play or transmit audio while idle, checks connection state every 30 seconds, and attempts to reconnect after disconnections or channel moves.
 
 The target channel, reconnect mode, and presence are saved in `data/settings.json` and restored on startup. Voice activity is stored locally in `data/analytics.db`.
 
@@ -24,7 +24,7 @@ The target channel, reconnect mode, and presence are saved in `data/settings.jso
 ## Features
 
 - **Voice 24/7** — stays connected even when nobody else is in the channel.
-- **Silent keepalive** — Opus silence streaming without FFmpeg.
+- **Idle standby** — no audio player or silence stream; connection heartbeats are managed by the voice library.
 - **Auto-reconnect** — recovery after voice-state changes and RTC interruptions.
 - **30-second watchdog** — checks for inconsistent connection state.
 - **Persistent settings** — restores the target channel and presence after restarts.
@@ -164,7 +164,6 @@ Run only one bot process per configuration and data directory.
 flowchart LR
     A[Discord Gateway] --> B[VoiceManager]
     B --> C[Discord Voice RTC]
-    B --> D[Opus silence stream]
     E[30-second watchdog] --> B
     F[data/settings.json] --> B
     B --> F
@@ -172,7 +171,7 @@ flowchart LR
 ```
 
 1. `VoiceManager` joins using the guild's voice adapter.
-2. When RTC reaches `Ready`, the audio player streams silence frames.
+2. When RTC reaches `Ready`, speaking is disabled; no audio player is started.
 3. Voice-state events detect disconnections and channel moves.
 4. The watchdog checks actual channel membership against RTC state.
 5. Saved settings support recovery after process restarts.

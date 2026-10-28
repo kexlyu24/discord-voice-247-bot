@@ -56,7 +56,7 @@ module.exports = {
             .addFields(
               { name: 'Channel', value: `🔊 ${targetChannel.name} (\`${targetChannel.id}\`)`, inline: true },
               { name: 'Mode 24/7', value: '🟢 Aktif (Auto-Reconnect)', inline: true },
-              { name: 'Anti-Disconnect', value: '🛡️ Aktif (NAT UDP Keepalive + Watchdog 30s)', inline: false }
+              { name: 'Anti-Disconnect', value: '🛡️ Aktif (Auto-Reconnect + Watchdog 30s)', inline: false }
             )
             .setFooter({ text: 'Bot akan tetap standby meskipun tidak ada orang di channel.' })
             .setTimestamp(),

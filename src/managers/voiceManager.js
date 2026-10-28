@@ -1,54 +1,17 @@
 const fs = require('fs');
 const path = require('path');
-const { Readable } = require('stream');
 const {
   joinVoiceChannel,
   getVoiceConnection,
   entersState,
-  createAudioPlayer,
-  createAudioResource,
-  StreamType,
-  AudioPlayerStatus,
   VoiceConnectionStatus,
-  NoSubscriberBehavior,
 } = require('@discordjs/voice');
 
-/**
- * Readable stream yang mengirimkan Opus silence frame secara berkala.
- * Mengirim 1 frame (3 byte) setiap 20ms (~1.2 kbps).
- * Mencegah timeout port UDP pada NAT router / firewall tanpa menggunakan CPU tinggi.
- */
-class SilenceStream extends Readable {
-  constructor(options = {}) {
-    super(options);
-    this.interval = null;
-    this.silenceFrame = Buffer.from([0xf8, 0xff, 0xfe]);
-  }
-
-  _read() {
-    if (!this.interval) {
-      this.interval = setInterval(() => {
-        if (!this.push(this.silenceFrame)) {
-          clearInterval(this.interval);
-          this.interval = null;
-        }
-      }, 20);
-    }
-  }
-
-  _destroy(err, cb) {
-    clearInterval(this.interval);
-    this.interval = null;
-    if (typeof cb === 'function') cb(err);
-  }
-}
 
 class VoiceManager {
   constructor(client) {
     this.client = client;
     this.connection = null;
-    this.player = null;
-    this.silenceStream = null;
     this.watchdogTimer = null;
     this.reconnectTimer = null;
     this.isReconnecting = false;
@@ -162,7 +125,7 @@ class VoiceManager {
       if (!this.connectedAt) {
         this.connectedAt = Date.now();
       }
-      this.startKeepAlive(connection);
+      connection.setSpeaking(false);
     });
 
     connection.on(VoiceConnectionStatus.Disconnected, async () => {
@@ -195,61 +158,12 @@ class VoiceManager {
     });
   }
 
-  /**
-   * Menjalankan AudioPlayer pengirim silence frame terus-menerus (Keepalive NAT UDP)
-   */
-  startKeepAlive(connection) {
-    try {
-      this.stopKeepAlive();
-
-      this.player = createAudioPlayer({
-        behaviors: {
-          noSubscriber: NoSubscriberBehavior.Play,
-        },
-      });
-
-      this.silenceStream = new SilenceStream();
-      const resource = createAudioResource(this.silenceStream, {
-        inputType: StreamType.Opus,
-      });
-
-      this.player.play(resource);
-      connection.subscribe(this.player);
-
-      this.player.on('error', (err) => {
-        console.warn(`[VoiceManager] Warning audio player keepalive: ${err.message}`);
-      });
-
-      console.log(`[VoiceManager] Silent keepalive aktif (UDP port anti-timeout running).`);
-    } catch (err) {
-      console.error(`[VoiceManager] Gagal memulai silent keepalive:`, err.message);
-    }
-  }
-
-  /**
-   * Menghentikan keepalive audio player
-   */
-  stopKeepAlive() {
-    if (this.silenceStream) {
-      try {
-        this.silenceStream.destroy();
-      } catch (_) {}
-      this.silenceStream = null;
-    }
-    if (this.player) {
-      try {
-        this.player.stop(true);
-      } catch (_) {}
-      this.player = null;
-    }
-  }
 
   /**
    * Membersihkan referensi koneksi aktif
    */
   cleanupConnection() {
     this.connectedAt = null;
-    this.stopKeepAlive();
     if (this.connection) {
       try {
         this.connection.destroy();
@@ -391,4 +305,4 @@ class VoiceManager {
   }
 }
 
-module.exports = { VoiceManager, SilenceStream };
+module.exports = { VoiceManager };

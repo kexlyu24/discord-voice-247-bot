@@ -1,7 +1,7 @@
 {
   "name": "discord-voice-247-bot",
   "version": "1.0.0",
-  "description": "Persistent Discord voice bot with silent keepalive, auto-reconnect, VPS monitoring, and configurable Rich Presence",
+  "description": "Persistent Discord voice bot with idle voice standby, auto-reconnect, VPS monitoring, and configurable Rich Presence",
   "main": "src/index.js",
   "repository": {
     "type": "git",
