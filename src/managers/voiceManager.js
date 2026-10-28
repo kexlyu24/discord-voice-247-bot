@@ -103,8 +103,8 @@ class VoiceManager {
       channelId: channel.id,
       guildId: guild.id,
       adapterCreator: guild.voiceAdapterCreator,
-      selfDeaf: process.env.SELF_DEAF !== 'false',
-      selfMute: process.env.SELF_MUTE === 'true',
+      selfDeaf: true,
+      selfMute: true,
     });
 
     this.connection = connection;

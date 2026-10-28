@@ -100,8 +100,6 @@ DISCORD_TOKEN=your_bot_token
 CLIENT_ID=your_application_id
 GUILD_ID=your_server_id
 TARGET_CHANNEL_ID=your_voice_channel_id
-SELF_DEAF=true
-SELF_MUTE=true
 ```
 
 | Variable | Required | Description |
@@ -110,10 +108,10 @@ SELF_MUTE=true
 | `CLIENT_ID` | For registration | Application ID used to register commands. |
 | `GUILD_ID` | Recommended | Registers commands in one server; also needed for initial auto-join. |
 | `TARGET_CHANNEL_ID` | Optional | Initial voice target; set together with `GUILD_ID`, or use `/join`. |
-| `SELF_DEAF` | No | Defaults to `true` unless explicitly disabled. |
-| `SELF_MUTE` | No | Defaults to `false`; the example sets it to `true`. |
 
 Saved targets take precedence over environment defaults. Use `/join` to change an existing target.
+
+Voice connections always use self-mute and self-deafen. These flags cannot be disabled through environment variables. The bot does not play, receive for processing, or record voice audio; analytics uses channel membership events only.
 
 > Never commit `.env` or share your token. Reset exposed tokens in the Discord Developer Portal.
 
