@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { DatabaseSync } = require('node:sqlite');
+const { RoomActivity } = require('./roomActivity');
 
 /**
  * Density blocks untuk visualisasi heatmap monospaced:
@@ -56,6 +57,7 @@ class AnalyticsManager {
 
     this.db = new DatabaseSync(this.dbPath);
     this.initDatabase();
+    this.roomActivity = new RoomActivity(this.db);
   }
 
   /**
@@ -123,6 +125,7 @@ class AnalyticsManager {
       for (const channel of guild.channels.cache.values()) {
         const isVoice = channel.isVoiceBased?.() || channel.type === 2;
         if (!isVoice || !channel.members) continue;
+        this.roomActivity.update(channel, nowSec);
 
         for (const member of channel.members.values()) {
           if (member.user?.bot) continue;
@@ -260,6 +263,8 @@ class AnalyticsManager {
     const nowSec = Math.floor(Date.now() / 1000);
     const guild = newState?.guild || oldState?.guild;
     const relevantChannel = newState?.channel || oldState?.channel;
+    this.roomActivity.update(oldState?.channel, nowSec);
+    this.roomActivity.update(newState?.channel, nowSec);
 
     if (!oldChannelId && newChannelId) {
       // 1. Member JOIN ke Voice Channel
@@ -535,6 +540,7 @@ class AnalyticsManager {
    */
   close() {
     const nowSec = Math.floor(Date.now() / 1000);
+    this.roomActivity.close(nowSec);
 
     // Flush active member sessions
     for (const [userId, session] of this.activeMembers.entries()) {

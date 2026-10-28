@@ -111,6 +111,22 @@ module.exports = {
           .setFooter({ text: 'NOIRÉL • Voice Insights' })
           .setTimestamp();
 
+        const rooms = analyticsManager.roomActivity.getRanking(interaction.guild.id)
+          .filter(room => {
+            const channel = interaction.guild.channels.cache.get(room.channelId);
+            return channel && channel.permissionsFor(interaction.member)?.has('ViewChannel');
+          }).slice(0, 3);
+        embed.addFields({
+          name: 'Voice Teramai · 7 Hari Terakhir',
+          value: rooms.length ? rooms.map((room, index) => {
+            const hours = Math.floor(room.personSeconds / 3600);
+            const minutes = Math.floor((room.personSeconds % 3600) / 60);
+            const duration = hours ? `${hours} jam ${minutes} menit-orang` : `${minutes} menit-orang`;
+            return `**${index + 1}.** <#${room.channelId}>\n${duration} · Biasanya ${room.typicalPeople} orang`;
+          }).join('\n\n') : 'Belum ada aktivitas room yang tercatat dalam 7 hari terakhir.',
+          inline: false,
+        });
+
         return interaction.editReply({ embeds: [embed] });
       }
 

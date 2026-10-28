@@ -59,6 +59,8 @@ Heatmaps use **WIB (UTC+7)** and completed member sessions. A session's entire d
 
 Records include the longest stored group and individual sessions, a streak for completed group activity with at least two non-bot members, and a top-three ranking over 30 days. Active sessions appear after completion or graceful shutdown; abrupt termination can lose in-memory sessions. Analytics records membership metadata, not audio.
 
+The heatmap also lists the three busiest visible rooms over a rolling seven-day window, ranked by accumulated person-time. “Biasanya N orang” is the time-weighted occupancy while the room is nonempty, rounded to the nearest whole person; bots and empty time are excluded. Room moves split occupancy intervals, and ongoing intervals are included. Room history starts when this feature is enabled; older sessions cannot be assigned to rooms. Graceful shutdown saves open intervals; a crash may lose the current interval, and offline time is not counted.
+
 ## Requirements
 
 - **Node.js 22.13.0+**; Node.js 24 LTS recommended.
